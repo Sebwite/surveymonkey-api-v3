@@ -20,7 +20,7 @@ class SurveyMonkey
      * @var string API key
      * @access protected
      */
-    protected $_apiKey;
+    protected $_apiKey = null;
 
     /**
      * @var string API access token
@@ -77,17 +77,12 @@ class SurveyMonkey
      * @throws SurveyMonkey_Exception If an error occurs creating the instance.
      * @return SurveyMonkey A unique SurveyMonkey instance.
      */
-    public function __construct($apiKey, $accessToken, $options = array(), $connectionOptions = array())
+    public function __construct($accessToken, $options = array(), $connectionOptions = array())
     {
-        if (empty($apiKey)) {
-            throw new SurveyMonkey_Exception('Missing apiKey');
-        }
-
         if (empty($accessToken)) {
             throw new SurveyMonkey_Exception('Missing accessToken');
         }
 
-        $this->_apiKey = $apiKey;
         $this->_accessToken = $accessToken;
 
         $this->_protocol = (!empty($options['protocol'])) ? $options['protocol'] : 'https';

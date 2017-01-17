@@ -20,7 +20,7 @@ class SurveyMonkey
      * @var string API key
      * @access protected
      */
-    protected $_apiKey = null;
+    protected $_apiKey;
 
     /**
      * @var string API access token
@@ -77,12 +77,17 @@ class SurveyMonkey
      * @throws SurveyMonkey_Exception If an error occurs creating the instance.
      * @return SurveyMonkey A unique SurveyMonkey instance.
      */
-    public function __construct($accessToken, $options = array(), $connectionOptions = array())
+    public function __construct($apiKey, $accessToken, $options = array(), $connectionOptions = array())
     {
+//        if (empty($apiKey)) {
+//            throw new SurveyMonkey_Exception('Missing apiKey');
+//        }
+
         if (empty($accessToken)) {
             throw new SurveyMonkey_Exception('Missing accessToken');
         }
 
+        $this->_apiKey = null;
         $this->_accessToken = $accessToken;
 
         $this->_protocol = (!empty($options['protocol'])) ? $options['protocol'] : 'https';
@@ -146,9 +151,12 @@ class SurveyMonkey
      */
     protected function parametersGETRequest($uri, $params)
     {
+        return $uri . '&' . http_build_query($params);
         foreach ($params as $key => $param) {
             $uri .= '&' . $key . '=' . $param;
         }
+
+        http_build_query($params);
 
         return $uri;
     }
@@ -229,11 +237,10 @@ class SurveyMonkey
      * @param array $params optional request array
      * @return array Results
      */
-    public function createFlow($params = array())
+    public function createFlow($surveyTitle, $from_survey_id, $params = array())
     {
-        if (!isset($params['nickname']) && isset($params['title'])) {
-            $params['nickname'] = $params['title'];
-        }
+        $params['title'] = $surveyTitle;
+        $params['from_survey_id'] = $from_survey_id;
 
         return $this->run('surveys', $params, 'POST');
     }
@@ -329,6 +336,46 @@ class SurveyMonkey
     public function getCollectorList($surveyId, $params = array())
     {
         return $this->run('surveys/' . $surveyId . '/collectors', $params, 'GET');
+    }
+
+    /**
+     * getCollector method
+     *
+     * @param       $collectorId
+     * @param array $params
+     *
+     * @return array
+     */
+    public function getCollector($collectorId, $params = array())
+    {
+        return $this->run('collectors/' . $collectorId, $params, 'GET');
+    }
+
+    /**
+     * getSurveyUrl method
+     *
+     * @param       $surveyId
+     * @param array $params
+     *
+     * @return bool
+     */
+    public function getSurvey($surveyId, $params = array())
+    {
+        $collectors = $this->getCollectorList($surveyId, $params);
+
+        if($collectors['success'] !== true || ! isset($collectors['data']) || ! isset($collectors['data']['data'])) {
+            return false;
+        }
+
+        // Get first collector
+        $collector = reset($collectors['data']['data']);
+        $collector = $this->getCollector($collector['id']);
+
+        if($collector['success'] !== true || ! isset($collector['data']) || $collector['data']['type'] !== 'weblink') {
+            return false;
+        }
+
+        return $collector['data'];
     }
 }
 

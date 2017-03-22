@@ -371,6 +371,11 @@ class SurveyMonkey
         $collector = reset($collectors['data']['data']);
         $collector = $this->getCollector($collector['id']);
 
+        if($collector['data']['status'] === 'closed') {
+            $collector = end($collectors['data']['data']);
+            $collector = $this->getCollector($collector['id']);
+        }
+
         if($collector['success'] !== true || ! isset($collector['data']) || $collector['data']['type'] !== 'weblink') {
             return false;
         }
